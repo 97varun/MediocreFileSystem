@@ -31,4 +31,9 @@ struct directroy {
 
 }
 
+struct dir_block {
+	
+
+}
+
 #endif
