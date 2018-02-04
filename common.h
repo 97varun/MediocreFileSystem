@@ -23,6 +23,10 @@
 #define MAX_DIR_LEN 100
 #define MAX_INODE_NB 100
 
+enum type_t {
+	DIR, REG_FILE
+};
+
 struct inode_t {
 	int inode_id;
 	int block_id_list[MAX_BLOCKS_PER_FILE];
@@ -32,6 +36,7 @@ struct inode_t {
 
 struct dir_ent_t {
 	char name[MAX_NAME_LEN];
+	enum type_t type;
 	int inode_id;
 };
 
@@ -40,7 +45,7 @@ struct dir_block_t {
 	struct dir_ent_t dir_ent[MAX_DIRENT_NB];
 };
 
-struct directroy_t {
+struct directory_t {
 	struct dir_block_t dir_block[MAX_DIR_LEN];
 };
 
