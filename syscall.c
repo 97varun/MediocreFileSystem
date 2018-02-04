@@ -1,10 +1,6 @@
 #include "common.h"
 #include "syscall.h"
 
-static struct dir_field dirent[MAX_DIRENT_NB];
-
-static int num_active_dirent = 2;
-
 int sys_mkdir(const char *path, mode_t mode) {
 	// TODO: implement mkdir	
 
@@ -20,6 +16,7 @@ int sys_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offse
 int sys_lstat(const char *path, struct stat *stbuf) {
 	int res = -ENOENT;
 
+	/* just for reference
 	char *dup_path = strdup(path);
 
 	int i;
@@ -40,8 +37,9 @@ int sys_lstat(const char *path, struct stat *stbuf) {
 		stbuf->st_mode = S_IFDIR | 0755;
 		stbuf->st_nlink = num_active_dirent;
 	}
-
+	
 	free(dup_path);
+	*/
 
 	return res;
 }

@@ -41,7 +41,7 @@ struct dir_block_t {
 };
 
 struct directroy_t {
-	struct dir_block_t dir_block_t[MAX_DIR_LEN];
+	struct dir_block_t dir_block[MAX_DIR_LEN];
 };
 
 struct inode_table_t {
