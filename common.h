@@ -48,9 +48,4 @@ struct inode_table_t {
 	struct inode_t inode[MAX_INODE_NB];
 };
 
-struct dir_block {
-	
-
-}
-
 #endif
