@@ -23,9 +23,18 @@ static int medfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, of
 	return sys_readdir(path, buf, filler, offset);
 }
 
+static int medfs_rmdir(const char *path) {
+	printf("rmdir called, path: %s\n", path);
+	return 0;
+}
+
+static int medfs_release(const char *path, struct fuse_file_info *fi) {
+	printf("close called, path: %s\n", path);
+	return 0;
+}
 
 static int medfs_open(const char *path, struct fuse_file_info *fi) {
-	printf("open called\n");
+	printf("open called, path: %s\n", path);
 	return 0;
 }
 
@@ -47,6 +56,8 @@ static struct fuse_operations medfs_oper = {
 	.open		= medfs_open,
 	.read		= medfs_read,
 	.write		= medfs_write,
+	.release	= medfs_release,
+	.rmdir		= medfs_rmdir,
 };
 
 int main(int argc, char *argv[]) {
