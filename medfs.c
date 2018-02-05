@@ -2,7 +2,7 @@
 #include "syscall.h"
 
 static int medfs_getattr(const char *path, struct stat *stbuf) {
-	printf("getattr called, path: %s\n", path);
+	//printf("getattr called, path: %s\n", path);
 
 	return sys_lstat(path, stbuf);
 }
