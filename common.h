@@ -43,6 +43,7 @@ struct dir_ent_t {
 struct dir_block_t {
 	char path[MAX_PATH_LEN];
 	struct dir_ent_t dir_ent[MAX_DIRENT_NB];
+	int num_ent;
 };
 
 struct directory_t {
