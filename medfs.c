@@ -1,6 +1,14 @@
 #include "common.h"
 #include "syscall.h"
 
+static void *medfs_init(struct fuse_conn_info *conn) {
+	(void) conn;
+	printf("init called\n");
+	sys_init();
+	return NULL;
+}
+
+
 static int medfs_getattr(const char *path, struct stat *stbuf) {
 	printf("getattr called, path: %s\n", path);
 
@@ -49,6 +57,7 @@ static int medfs_write(const char *path, const char *buf, size_t size, off_t off
 }
 
 static struct fuse_operations medfs_oper = {
+	.init		= medfs_init,
 	.getattr	= medfs_getattr,
 	.mkdir		= medfs_mkdir,
 	.mknod		= medfs_mknod,
