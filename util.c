@@ -22,6 +22,7 @@ char *get_parent_path(const char *path) {
 		if (dup_path[i] != '/') {
 			dup_path[i] = '\0';		
 		} else {
+			dup_path[i] = '\0';
 			break;
 		}	
 	}
