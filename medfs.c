@@ -1,89 +1,67 @@
+#include "common.h"
+#include "syscall.h"
 
- 
-#define FUSE_USE_VERSION 30
+static int medfs_getattr(const char *path, struct stat *stbuf) {
+	printf("getattr called, path: %s\n", path);
 
-#include <fuse.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <time.h>
-#include <string.h>
-#include <stdlib.h>
+	return sys_lstat(path, stbuf);
+}
 
-static int do_getattr( const char *path, struct stat *st )
-{
-	//printf( "[getattr] Called\n" );
-	
-	st->st_uid = getuid(); 
-	st->st_gid = getgid(); 
-	st->st_atime = time( NULL ); 
-	st->st_mtime = time( NULL ); 
-	
-	if ( strcmp( path, "/" ) == 0 )
-	{
-		st->st_mode = S_IFDIR | 0755;
-		st->st_nlink = 2; 
-	}
-	else
-	{
-		st->st_mode = S_IFREG | 0644;
-		st->st_nlink = 1;
-		st->st_size = 1024;
-	}
-	
+static int medfs_mkdir(const char *path, mode_t mode) {
+	printf("mkdir called\n");
+	sys_mkdir(path, mode);
 	return 0;
 }
 
-static int do_readdir( const char *path, void *buffer, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi )
-{
-	printf( "Readdir called", path );
-	
-	filler( buffer, ".", NULL, 0 ); // Current Directory
-	filler( buffer, "..", NULL, 0 ); // Parent Directory
-	
-	if ( strcmp( path, "/" ) == 0 ) // If the user is trying to show the files/directories of the root directory show the following
-	{
-		filler( buffer, "kys", NULL, 0 );
-		filler( buffer, "fys", NULL, 0 );
-	}
-	
+static int medfs_mknod(const char *path, mode_t mode, dev_t dev) {
+	printf("mknod called\n");
 	return 0;
 }
-/*static int do_open(const char *, struct fuse_file_info *){
 
-
-};
-*/
-static int do_read( const char *path, char *buffer, size_t size, off_t offset, struct fuse_file_info *fi )
-{
-	printf( "Reading files %s, %ld, %ld\n", path, offset, size );
-	//const char msg[] = "Hello World!";
-	//write(STDOUT_FILENO, "msg", sizeof(msg)-1);
-	char file54Text[] = "This file says please kys ";
-	char file349Text[] = "This file says go fys";
-	char *selectedText = NULL;
-	
-	
-	
-	if ( strcmp( path, "/kys" ) == 0 )
-		selectedText = file54Text;
-	else if ( strcmp( path, "/fys" ) == 0 )
-		selectedText = file349Text;
-	else
-		return -1;
-
-	memcpy( buffer, selectedText + offset, size );
-		
-	return strlen( selectedText ) - offset;
+static int medfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi) {
+	printf("readdir called, path: %s\n", path);
+	return sys_readdir(path, buf, filler, offset);
 }
 
-static struct fuse_operations operations = {
-    .getattr	= do_getattr,
-    .readdir	= do_readdir,
-    .read		= do_read,
+static int medfs_rmdir(const char *path) {
+	printf("rmdir called, path: %s\n", path);
+	return 0;
+}
+
+static int medfs_release(const char *path, struct fuse_file_info *fi) {
+	printf("close called, path: %s\n", path);
+	return 0;
+}
+
+static int medfs_open(const char *path, struct fuse_file_info *fi) {
+	printf("open called, path: %s\n", path);
+	return 0;
+}
+
+static int medfs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
+	printf("read called\n");
+	return 0;
+}
+
+static int medfs_write(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
+	printf("write called\n");
+	return 0;
+}
+
+static struct fuse_operations medfs_oper = {
+	.getattr	= medfs_getattr,
+	.mkdir		= medfs_mkdir,
+	.mknod		= medfs_mknod,
+	.readdir	= medfs_readdir,
+	.open		= medfs_open,
+	.read		= medfs_read,
+	.write		= medfs_write,
+	.release	= medfs_release,
+	.rmdir		= medfs_rmdir,
 };
 
-int main( int argc, char *argv[] )
-{
-	return fuse_main( argc, argv, &operations, NULL );
+int main(int argc, char *argv[]) {
+	// TODO: mkfs();
+	printf("File system mounted!\n");
+	return fuse_main(argc, argv, &medfs_oper, NULL);	
 }
