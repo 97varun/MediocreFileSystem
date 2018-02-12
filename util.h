@@ -1,3 +1,3 @@
 #include "common.h"
 
-void fill_dir_ent(struct dir_block_t *dir_block, char *entry);
+int fill_dir_ent(struct dir_block_t *dir_block, char *entry, enum type_t type);
