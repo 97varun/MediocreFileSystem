@@ -7,15 +7,16 @@ static struct directory_t dir;
 int sys_init() {
 	int free_idx = 0;
 	strcpy(dir.dir_block[free_idx].path, "/");
-	fill_dir_ent(&(dir.dir_block[free_idx]), ".");
-	fill_dir_ent(&(dir.dir_block[free_idx]), "..");
+	fill_dir_ent(&(dir.dir_block[free_idx]), ".", DIR);
+	fill_dir_ent(&(dir.dir_block[free_idx]), "..", DIR);
 	dir.dir_block[free_idx].num_ent = 2;
 	return 0;
 }
 
 int sys_mkdir(const char *path, mode_t mode) {
-	char *name = strdup(path);
-	basename(name);
+	char *dup_path = strdup(path);
+	char *name = strdup(basename(dup_path));
+	char *par_path = strdup(dirname(dup_path));
 
 	int free_idx = 0;
 	for (; free_idx < MAX_DIR_LEN; ++free_idx) {
@@ -26,20 +27,19 @@ int sys_mkdir(const char *path, mode_t mode) {
 	}
 
 	if (free_idx >= MAX_DIR_LEN) {
-		printf("path not found\n");
+		printf("not enough space\n");
 		return 1;
 	}
 	
+	// add path
 	strcpy(dir.dir_block[free_idx].path, path);
 	dir.dir_block[free_idx].num_ent = 2;
 
 	// initialise directory with '.' and '..'
-	fill_dir_ent(&(dir.dir_block[free_idx]), ".");
-	fill_dir_ent(&(dir.dir_block[free_idx]), "..");
+	fill_dir_ent(&(dir.dir_block[free_idx]), ".", DIR);
+	fill_dir_ent(&(dir.dir_block[free_idx]), "..", DIR);
 	
 	// find parent directory
-	char *dup_path = strdup(path);
-	char *par_path = dirname(dup_path);
 	int par_idx;
 	for (par_idx = 0; par_idx < MAX_DIR_LEN; ++par_idx) {
 		if (!(strcmp(par_path, dir.dir_block[par_idx].path))) {
@@ -48,13 +48,15 @@ int sys_mkdir(const char *path, mode_t mode) {
 	}
 
 	// add entry to parent directory
-	fill_dir_ent(&(dir.dir_block[par_idx]), name);
+	fill_dir_ent(&(dir.dir_block[par_idx]), name, DIR);
+
 	// increase hardlink count
 	dir.dir_block[par_idx].num_ent++;
 
 	free(name);
 	free(par_path);
-
+	free(dup_path);
+	
 	return 0;
 }
 
@@ -63,21 +65,20 @@ int sys_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offse
 	for(int i = 0; i < MAX_DIR_LEN; i++) {
 		if(strcmp(path, dir.dir_block[i].path) == 0) {
 			flag = 1;
-			filler(buf, ".", NULL, 0);
-			filler(buf, "..", NULL, 0);
 			
 			for (int j = 0; j < MAX_DIRENT_NB; j++) {
 				if(strlen(dir.dir_block[i].dir_ent[j].name)) {
-					char *name = basename(dir.dir_block[i].dir_ent[j].name);
-					filler(buf, name, NULL, 0);
+					filler(buf, dir.dir_block[i].dir_ent[j].name, NULL, 0);
 				}
 
 			}
+			
 			break;
 		}
 	}
 	// if no dir with given path is there
 	if(!flag) {
+		printf("here\n");
 		return -1;
 	}
 
@@ -85,19 +86,135 @@ int sys_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offse
 }
 
 int sys_lstat(const char *path, struct stat *stbuf) {
-	int res = -ENOENT;
+	char *dup_path = strdup(path);
+	char *name = strdup(basename(dup_path));
+	char *par_path = strdup(dirname(dup_path));
+	
+	if (!strcmp(path, "/")) {
+		int dir_idx = 0;
+		stbuf->st_mode = S_IFDIR | 0777;
+		stbuf->st_nlink = dir.dir_block[dir_idx].num_ent;
+		return 0;
+	}
+	
+	// find parent in directory
+	int par_idx;
+	for (par_idx = 0; par_idx < MAX_DIR_LEN; ++par_idx) {
+		if (!(strcmp(par_path, dir.dir_block[par_idx].path))) {
+			break;
+		}	
+	}
+	
+	// path does not exist
+	if (par_idx >= MAX_DIR_LEN) {
+		return -ENOENT;
+	}
+	
+	if (name == NULL || par_path == NULL) {
+		return -ENOENT;
+	}
+	
+	// find entry in parent
+	int j;
+	for (j = 0; j < MAX_DIRENT_NB; ++j) {
+		if (!(strcmp(name, dir.dir_block[par_idx].dir_ent[j].name))) {
+			break;
+		}
+	}
 
-	// all exisiting entries are directories for now.
+	// file or directory does not exist
+	if (j >= MAX_DIRENT_NB) {
+		return -ENOENT;
+	}
+
+	// determine type, file or directory
+	if (dir.dir_block[par_idx].dir_ent[j].type == REG_FILE) {
+		stbuf->st_mode = S_IFREG | 0777;
+	} else {
+		int dir_idx;
+		for (dir_idx = 0; dir_idx < MAX_DIR_LEN; ++dir_idx) {
+			if (!strcmp(path, dir.dir_block[dir_idx].path)) {
+				break;
+			}
+		}
+		stbuf->st_mode = S_IFDIR | 0777;
+		stbuf->st_nlink = dir.dir_block[dir_idx].num_ent;
+	}
+
+	return 0;
+}
+
+int sys_rmdir(const char *path) {
+	char *dup_path = strdup(path);
+	char *name = strdup(basename(dup_path));
+	char *par_path = strdup(dirname(dup_path));
+
+	// find required path
 	int i;
-	for (int i = 0; i < MAX_DIR_LEN; ++i) {
-		if (!(strcmp(path, dir.dir_block[i].path))) {
-			stbuf->st_mode = S_IFDIR | 0777;
-			stbuf->st_nlink = dir.dir_block[i].num_ent;
-			res = 0;
+	for (i = 0; i < MAX_DIR_LEN; ++i) {
+		if (!strcmp(path, dir.dir_block[i].path)) {
 			break;
 		}		
 	}
+	
+	// path does not exist
+	if (i == MAX_DIR_LEN) {
+		return -ENOENT;
+	}
+	
+	// make path empty
+	dir.dir_block[i].path[0] = '\0';
+	dir.dir_block[i].num_ent = 0;
+	
+	// find parent in directory
+	for (i = 0; i < MAX_DIR_LEN; ++i) {
+		if (!strcmp(par_path, dir.dir_block[i].path)) {
+			break;
+		}	
+	}
+	
+	// find entry in parent
+	int j;
+	for (j = 0; j < MAX_DIRENT_NB; ++j) {
+		if (!strcmp(name, dir.dir_block[i].dir_ent[j].name)) {
+			break;
+		}
+	}
+	
+	// make entry empty
+	dir.dir_block[i].dir_ent[j].name[0] = '\0';
+	dir.dir_block[i].num_ent--;
+	
+	free(name);
+	free(par_path);
+	free(dup_path);
+	
+	return 0;
+}
 
-	return res;
+int sys_mknod(const char *path) {
+	char *dup_path = strdup(path);
+	char *name = strdup(basename(dup_path));
+	char *par_path = strdup(dirname(dup_path));
+	
+	// find parent directory
+	int par_idx;
+	for (par_idx = 0; par_idx < MAX_DIR_LEN; ++par_idx) {
+		if (!(strcmp(par_path, dir.dir_block[par_idx].path))) {
+			break;
+		}	
+	}
+
+	// add entry to parent directory
+	fill_dir_ent(&(dir.dir_block[par_idx]), name, REG_FILE);
+
+	// increase hardlink count
+	dir.dir_block[par_idx].num_ent++;
+	
+	free(name);
+	free(par_path);
+	free(dup_path);
+		
+	return 0;
 }
 
