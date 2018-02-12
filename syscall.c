@@ -120,11 +120,23 @@ int sys_open(const char *path, mode_t mode) {
 	}
 
 	if(flag1 && flag2 && flag3) {
-		printf("fd : %d\n", &fd);
+		//printf("fd : %d\n", &fd);
 		return fd;
 	}
 
 	return -1;
+}
+
+int sys_close(int fd) {
+	//if file is already closed 
+	if(fd_table.file_desc[fd].fd==-1) {
+		return -1;
+	}
+	else {
+		fd_table.file_desc[fd].fd=-1;
+		fd_table.file_desc[fd].inode_id=-1;
+	}	
+	return 0;
 }
 
 int sys_lstat(const char *path, struct stat *stbuf) {
