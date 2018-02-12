@@ -3,6 +3,7 @@
 #include "util.h"
 
 static struct directory_t dir;
+static struct fd_table_t fd_table; //file descriptor
 
 int sys_init() {
 	int free_idx = 0;
@@ -10,6 +11,12 @@ int sys_init() {
 	fill_dir_ent(&(dir.dir_block[free_idx]), ".");
 	fill_dir_ent(&(dir.dir_block[free_idx]), "..");
 	dir.dir_block[free_idx].num_ent = 2;
+	
+	// initializing fd_table
+	for (int i = 0;i < MAX_FDT_LEN;i++) {
+		fd_table.file_desc[i].fd = -1;
+		fd_table.file_desc[i].inode_id = -1;
+	}
 	return 0;
 }
 
@@ -85,23 +92,39 @@ int sys_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offse
 }
 
 int sys_open(const char *path, mode_t mode) {
-	int flag1=0,flag2=0,fd;
+	int flag1=0,flag2=0,flag3=0;
+	int fd,myInode;
 	char * dup_path = strdup(path);
 	char *par_path = dirname(dup_path);
 	char *file_name = basename(dup_path);
+	//Finding inode of file
 	for (int i = 0; i < MAX_DIR_LEN ; i++) {
 		if (strcmp (par_path , dir.dir_block[i].path) == 0) {
-			flag = 1;
+			flag1 = 1;
 			for (int j = 0; j < MAX_DIRENT_NB ; j++) {
-				if(strcmp (file_name,dir.dir_block[i].dir_ent[j].name) == 0):
-					fd = dir.dir_block[i].dir_ent[j].inode_id;
+				if(strcmp (file_name,dir.dir_block[i].dir_ent[j].name) == 0) {
+					myInode = dir.dir_block[i].dir_ent[j].inode_id;
+				}
 			}
 		}
 	}
-	if(flag1 && flag2)
-		return fd;
-	return -1;
+	//Finding smallest free fd
+	for (int i = 0 ; i < MAX_FDT_LEN ; i++) {
+		if(fd_table.file_desc[i].fd = -1) {
+			fd_table.file_desc[i].fd = i;
+			fd_table.file_desc[i].inode_id = myInode;
+			flag3 = 1;
+			fd = i;
+			break;	
+		}
+	}
 
+	if(flag1 && flag2 && flag3) {
+		printf("fd : %d\n", &fd);
+		return fd;
+	}
+
+	return -1;
 }
 
 int sys_lstat(const char *path, struct stat *stbuf) {

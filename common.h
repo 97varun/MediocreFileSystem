@@ -60,7 +60,7 @@ struct file_desc_t {
 	int inode_id;
 };
 
-struct fd_table {
+struct fd_table_t {
 	struct file_desc_t file_desc[MAX_FDT_LEN];
 };
 
