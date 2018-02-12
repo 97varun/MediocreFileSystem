@@ -84,6 +84,26 @@ int sys_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offse
 	return 0;
 }
 
+int sys_open(const char *path, mode_t mode) {
+	int flag1=0,flag2=0,fd;
+	char * dup_path = strdup(path);
+	char *par_path = dirname(dup_path);
+	char *file_name = basename(dup_path);
+	for (int i = 0; i < MAX_DIR_LEN ; i++) {
+		if (strcmp (par_path , dir.dir_block[i].path) == 0) {
+			flag = 1;
+			for (int j = 0; j < MAX_DIRENT_NB ; j++) {
+				if(strcmp (file_name,dir.dir_block[i].dir_ent[j].name) == 0):
+					fd = dir.dir_block[i].dir_ent[j].inode_id;
+			}
+		}
+	}
+	if(flag1 && flag2)
+		return fd;
+	return -1;
+
+}
+
 int sys_lstat(const char *path, struct stat *stbuf) {
 	int res = -ENOENT;
 
