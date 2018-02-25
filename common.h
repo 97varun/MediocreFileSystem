@@ -22,6 +22,7 @@
 #define MAX_PATH_LEN 64
 #define MAX_DIR_LEN 100
 #define MAX_INODE_NB 100
+#define MAX_FDT_LEN 100
 
 enum type_t {
 	DIR, REG_FILE
@@ -43,6 +44,7 @@ struct dir_ent_t {
 struct dir_block_t {
 	char path[MAX_PATH_LEN];
 	struct dir_ent_t dir_ent[MAX_DIRENT_NB];
+	int num_ent;
 };
 
 struct directory_t {
@@ -51,6 +53,15 @@ struct directory_t {
 
 struct inode_table_t {
 	struct inode_t inode[MAX_INODE_NB];
+};
+
+struct file_desc_t {
+	int fd;
+	int inode_id;
+};
+
+struct fd_table_t {
+	struct file_desc_t file_desc[MAX_FDT_LEN];
 };
 
 #endif
