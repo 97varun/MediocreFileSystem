@@ -29,7 +29,6 @@ enum type_t {
 };
 
 struct inode_t {
-	int inode_id;
 	int block_id_list[MAX_BLOCKS_PER_FILE];
 	mode_t mode;
 	nlink_t nlink;
