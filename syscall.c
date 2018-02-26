@@ -15,10 +15,13 @@ int sys_init() {
 	write_block();
 	
 	// initializing fd_table
-	for (int i = 0;i < MAX_FDT_LEN;i++) {
+	for (int i = 0; i < MAX_FDT_LEN; i++) {
 		fd_table.file_desc[i].fd = -1;
 		fd_table.file_desc[i].inode_id = -1;
 	}
+	
+	inode_init();
+
 	return 0;
 }
 
