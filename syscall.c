@@ -192,7 +192,7 @@ int sys_lstat(const char *path, struct stat *stbuf) {
 				break;
 			}
 		}
-		stbuf->st_mode = S_IFDIR | 0777;
+		stbuf->st_mode = S_IFDIR | 0755;
 		stbuf->st_nlink = dir.dir_block[dir_idx].num_ent;
 	}
 
