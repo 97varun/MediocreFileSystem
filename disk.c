@@ -2,10 +2,13 @@
 #include "disk.h"
 
 static char **block;
+int *bitmap; // if 1 write possible, no otherwise
 
 // initialise disk
 int init_disk() {
 	block = malloc(MAX_BLOCKS * sizeof(char*));
+	bitmap = malloc(MAX_BLOCKS * sizeof(int));
+	memset(bitmap, 1, sizeof(bitmap));
 	if (!block) {
 		return -1;
 	}
@@ -28,10 +31,26 @@ int read_block(int block_id, void *buf) {
 	return -1;
 }
 
-// write a block, given block_id
-int write_block(int block_id, void *buf) {
+// write a block
+int write_block(void *buf) {
+	int block_id;
+	for (block_id = 0; block_id < MAX_BLOCKS; ++block_id) {
+		if (bitmap[block_id]) {
+			break;
+		}
+	}
 	if (block_id < MAX_BLOCKS) {
 		memcpy(block[block_id], buf, BLOCK_SZ);
+		bitmap[block_id] = 0;
+		return 0;
+	}
+	return -1;
+}
+
+// erase a block
+int erase_block(int block_id) {
+	if (block_id >= 0 && block_id < MAX_BLOCKS) {
+		bitmap[block_id] = 1;
 		return 0;
 	}
 	return -1;

@@ -5,8 +5,9 @@
 #define BLOCK_SZ 512
 
 int init_disk();
-int write_block(int, void*);
+int write_block(void*);
 int read_block(int, void*);
 void free_disk();
+int erase_block(int);
 
 #endif
