@@ -278,3 +278,36 @@ int sys_mknod(const char *path) {
 	return 0;
 }
 
+int medfs_pread(int fildes, void *buf, size_t nbyte, off_t offset){
+	int inode_id,block,off;
+	char *b=malloc(BLOCK_SZ);
+	//printf("%d",);
+	if(fd_table.file_desc[fildes].fd!=-1){
+		inode_id=fd_table.file_desc[fildes].inode_id;
+		off=fd_table.file_desc[fildes].current_off;
+		block=get_block(inode_id);
+		read_block(block,b);
+		memcpy(&buf, b+off+offset, nbyte);
+		fd_table.file_desc[fildes].current_off+=offset;
+	}	
+	else{
+		return EBADF;//fd doesnt exist
+	}
+
+}
+
+int medfs_write(int fildes, const void *buf, size_t nbyte, off_t offset){
+	int inode_id,block,off;
+	if(fd_table.file_desc[fildes].fd!=-1){
+		inode_id = fd_table.file_desc[fildes].inode_id;
+		off=fd_table.file_desc[fildes].current_off;
+		block=write_block(buf);
+		if(block==-1){
+			return EPERM;
+		}
+	}
+	else{
+		return EBADF;
+	}
+
+}
