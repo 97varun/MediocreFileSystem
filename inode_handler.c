@@ -51,6 +51,7 @@ int set_nlink(int inode_num , int value) {
 		return -1;
 	}
 	inode_table.inode[inode_num].nlink=value;
+	write_block(1,&inode_table);
 	return 0;
 }
 
@@ -59,5 +60,6 @@ int set_block(int inode_num , int block_id) {
 		return -1;
 	}
 	inode_table.inode[inode_num].block_id_list[0]=block_id;
+	write_block(1,&inode_table);
 	return 0;
 }

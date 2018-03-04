@@ -13,5 +13,11 @@ int fill_dir_ent(struct dir_block_t *dir_block, char *entry, enum type_t type) {
 	}
 	strcpy(dir_block->dir_ent[i].name, entry);
 	dir_block->dir_ent[i].type = type;
+	
+	if (type == REG_FILE) {
+		dir_ent[i].inode_id = get_inode();
+		set_nlink(dir_ent[i].inode_id, 1);	
+	}
+	
 	return 0;
 }

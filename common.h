@@ -16,13 +16,13 @@
 #include <assert.h>
 #include <libgen.h>
 
-#define MAX_DIRENT_NB 10
-#define MAX_NAME_LEN 64
+#define MAX_DIRENT_NB 5
+#define MAX_NAME_LEN 20
 #define MAX_BLOCKS_PER_FILE 10
-#define MAX_PATH_LEN 64
-#define MAX_DIR_LEN 100
-#define MAX_INODE_NB 100
-#define MAX_FDT_LEN 100
+#define MAX_PATH_LEN 20
+#define MAX_DIR_LEN 20
+#define MAX_INODE_NB 20
+#define MAX_FDT_LEN 20
 
 enum type_t {
 	DIR, REG_FILE
