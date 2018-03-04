@@ -9,11 +9,13 @@ int init_disk() {
 	block = malloc(MAX_BLOCKS * sizeof(char*));
 	bitmap = malloc(MAX_BLOCKS * sizeof(int));
 	
+	/*
 	int j;
 	for (j = 0; j < MAX_BLOCKS; ++j) {
 		bitmap[j] = 1;
 	}
-
+	*/
+	
 	if (!block) {
 		return -1;
 	}
@@ -24,19 +26,42 @@ int init_disk() {
 			return -1;
 		}
 	}
+	
+	FILE* fp = fopen("/tmp/medfs_disk", "r+");
+	for (i = 0; i < MAX_BLOCKS; ++i) {
+		fread(block[i], 1, BLOCK_SZ, fp);	
+	}
+	fclose(fp);
+	if (remove("/tmp/medfs_disk")) {
+		printf("deletion successful\n");
+	}
+	
+	fp = fopen("/tmp/medfs_bitmap", "r+");
+	fread(bitmap, sizeof(int), MAX_BLOCKS, fp);
+	fclose(fp);
+	if (remove("/tmp/medfs_bitmap")) {
+		printf("deletion successful\n");
+	}
+	
+	printf("bitmap\n");
+	for (i = 0; i < 10; ++i) {
+		printf("%d", bitmap[i]);
+	}
+	printf("\n");
+	
+	printf("first block: %s\n", block[0]);
+	
 	return 0;
 }
 
 // read block, given block id
 int read_block(int block_id, void *buf) {
-	printf("read block before\n");
 	if (block_id < MAX_BLOCKS) {
-		memcpy(buf, block[block_id], sizeof(buf));
+		memcpy(buf, block[block_id], BLOCK_SZ);
 		printf("block_id: %d\n", block_id);
 		printf("block[block_id] :%s\n", block[block_id]);
 		return 0;
 	}
-	printf("read block after\n");
 	return -1;
 }
 
@@ -49,20 +74,46 @@ int write_block(const void *buf) {
 		}
 	}
 	if (block_id < MAX_BLOCKS) {
-		memcpy(block[block_id], buf, sizeof(buf));
+		memcpy(block[block_id], buf, BLOCK_SZ);
 		bitmap[block_id] = 0;
+		
+		FILE* fp = fopen("/tmp/medfs_disk", "w+");
+		int i;
+		for (i = 0; i < MAX_BLOCKS; ++i) {
+			int n = fwrite(block[i], 1, BLOCK_SZ, fp);
+		}
+		fclose(fp);
+		fp = fopen("/tmp/medfs_bitmap", "w+");
+		int n = fwrite(bitmap, sizeof(int), MAX_BLOCKS, fp);
+		fclose(fp);
+		
 		return block_id;
 	}
+	
 	return -1;
 }
 
 // write block at a particular block id
-int write_block_at(int block_id, void *buf) {
+int write_block_at(int block_id, const void *buf) {
 	if (block_id < MAX_BLOCKS) {
-		memcpy(block[block_id], buf, sizeof(buf));
+		printf("sizeof(buf): %d\n", sizeof(buf));
+		memcpy(block[block_id], buf, BLOCK_SZ);
 		bitmap[block_id] = 0;
+		
+		FILE* fp = fopen("/tmp/medfs_disk", "w+");
+		int i;
+		for (i = 0; i < MAX_BLOCKS; ++i) {
+			int n = fwrite(block[i], 1, BLOCK_SZ, fp);
+			printf("number of blocks written: %d\n", n);
+		}
+		fclose(fp);
+		fp = fopen("/tmp/medfs_bitmap", "w+");
+		int n = fwrite(bitmap, sizeof(int), MAX_BLOCKS, fp);
+		fclose(fp);
+		
 		return 0;
 	}
+	
 	return -1;
 }
 
@@ -70,8 +121,13 @@ int write_block_at(int block_id, void *buf) {
 int erase_block(int block_id) {
 	if (block_id >= 0 && block_id < MAX_BLOCKS) {
 		bitmap[block_id] = 1;
+		FILE* fp = fopen("/tmp/medfs_bitmap", "w+");
+		fwrite(block, sizeof(int), MAX_BLOCKS, fp);
+		fclose(fp);
+		
 		return 0;
 	}
+	
 	return -1;
 }
 

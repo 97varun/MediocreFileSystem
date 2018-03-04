@@ -11,15 +11,22 @@ int sys_init() {
 	init_disk();
 
 	// read directory from disk
-	// read_block(0, &dir);
+	read_block(0, &dir);
+	
+	printf("directory :--\n");
+	int q;
+	for (q = 0; q < 5; ++q) {
+		printf("%s\n", dir.dir_block[q].path);
+	}
 
 	// creating root directory
+	/*
 	int free_idx = 0;
 	strcpy(dir.dir_block[free_idx].path, "/");
 	fill_dir_ent(&(dir.dir_block[free_idx]), ".", DIR);
 	fill_dir_ent(&(dir.dir_block[free_idx]), "..", DIR);
 	dir.dir_block[free_idx].num_ent = 2;
-	
+	*/
 	// initializing fd_table
 	for (int i = 0; i < MAX_FDT_LEN; i++) {
 		fd_table.file_desc[i].fd = -1;
@@ -27,7 +34,7 @@ int sys_init() {
 	}
 	
 	// wirte directory
-	write_block_at(0, &dir);
+	// write_block_at(0, &dir);
 	
 	inode_init();
 	
@@ -80,8 +87,24 @@ int sys_mkdir(const char *path, mode_t mode) {
 	dir.dir_block[par_idx].num_ent++;
 	
 	// wirte directory
-	write_block_at(0, &dir);
-
+	printf("sizeof(dir): %d\n", sizeof(dir));
+	char* tmp_dir = malloc(sizeof(dir));
+	printf("sizeof(tmp_dir): %d\n", sizeof(tmp_dir));
+	memcpy(tmp_dir, &dir, sizeof(dir));
+	write_block_at(0, tmp_dir);
+	
+	printf("directory :--\n");
+	int q;
+	for (q = 0; q < 5; ++q) {
+		printf("%s\n", dir.dir_block[q].path);
+	}
+	
+	read_block(0, &dir);
+	printf("after read directory :--\n");
+	for (q = 0; q < 5; ++q) {
+		printf("%s\n", dir.dir_block[q].path);
+	}
+	
 	free(name);
 	free(par_path);
 	free(dup_path);
@@ -315,8 +338,6 @@ int sys_mknod(const char *path) {
 	free(name);
 	free(par_path);
 	free(dup_path);
-	
-	
 		
 	return 0;
 }
@@ -331,7 +352,7 @@ int sys_pread(int fildes, void *buf, size_t nbyte, off_t offset){
 		block=get_block(inode_id);
 		if(read_block(block, b) == 0) {
 			memcpy(buf, b+off+offset, nbyte);
-			fd_table.file_desc[fildes].current_off += offset;
+			// fd_table.file_desc[fildes].current_off 0;
 			printf("buf: %s, sizeof(buf): %d\n", buf, sizeof(buf));
 			return sizeof(buf);
 		}
