@@ -8,3 +8,4 @@ int free_inode(int inode_num);
 int get_block(int inode_num);
 int get_nlink(int inode_num);
 int set_nlink(int inode_num , int value);
+int set_block(int inode_num , int block_id);
