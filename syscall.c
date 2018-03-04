@@ -38,7 +38,7 @@ int sys_init() {
 
 int sys_mkdir(const char *path, mode_t mode) {
 	// read directory from disk
-	read_block(0, &dir);
+	// read_block(0, &dir);
 
 	char *dup_path = strdup(path);
 	char *name = strdup(basename(dup_path));
@@ -91,7 +91,7 @@ int sys_mkdir(const char *path, mode_t mode) {
 
 int sys_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset) {
 	// read directory from disk
-	read_block(0, &dir);
+	// read_block(0, &dir);
 	
 	int flag = 0;
 	for(int i = 0; i < MAX_DIR_LEN; i++) {
@@ -117,15 +117,16 @@ int sys_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offse
 	return 0;
 }
 
-int sys_open(const char *path, mode_t mode) {
+int sys_open(const char *path) {
 	// read directory from disk
-	read_block(0, &dir);
+	// read_block(0, &dir);
 
 	int flag1=0,flag2=0,flag3=0;
-	int fd,myInode;
-	char * dup_path = strdup(path);
-	char *par_path = dirname(dup_path);
-	char *file_name = basename(dup_path);
+	int fd, myInode;
+	char *dup_path = strdup(path);
+	char *file_name = strdup(basename(dup_path));
+	char *par_path = strdup(dirname(dup_path));
+	
 	//Finding inode of file
 	for (int i = 0; i < MAX_DIR_LEN ; i++) {
 		if (strcmp (par_path , dir.dir_block[i].path) == 0) {
@@ -137,6 +138,7 @@ int sys_open(const char *path, mode_t mode) {
 			}
 		}
 	}
+	
 	//Finding smallest free fd
 	for (int i = 0 ; i < MAX_FDT_LEN ; i++) {
 		if(fd_table.file_desc[i].fd = -1) {
@@ -148,16 +150,15 @@ int sys_open(const char *path, mode_t mode) {
 		}
 	}
 
-	if(flag1 && flag2 && flag3) {
+	if(flag1  && flag3) {
 		//printf("fd : %d\n", &fd);
 		return fd;
 	}
-
 	return -1;
 }
 
 int sys_close(int fd) {
-	//if file is already closed 
+	// if file is already closed 
 	if(fd_table.file_desc[fd].fd==-1) {
 		return -1;
 	}
@@ -165,12 +166,13 @@ int sys_close(int fd) {
 		fd_table.file_desc[fd].fd=-1;
 		fd_table.file_desc[fd].inode_id=-1;
 	}	
+	printf("closed successfully\n");
 	return 0;
 }
 
 int sys_lstat(const char *path, struct stat *stbuf) {
 	// read directory from disk
-	read_block(0, &dir);
+	// read_block(0, &dir);
 	
 	char *dup_path = strdup(path);
 	char *name = strdup(basename(dup_path));
@@ -232,7 +234,7 @@ int sys_lstat(const char *path, struct stat *stbuf) {
 
 int sys_rmdir(const char *path) {
 	// read directory from disk
-	read_block(0, &dir);
+	// read_block(0, &dir);
 
 	char *dup_path = strdup(path);
 	char *name = strdup(basename(dup_path));
@@ -286,7 +288,7 @@ int sys_rmdir(const char *path) {
 
 int sys_mknod(const char *path) {
 	// read directory from disk
-	read_block(0, &dir);
+	// read_block(0, &dir);
 	
 	char *dup_path = strdup(path);
 	char *name = strdup(basename(dup_path));
@@ -312,39 +314,48 @@ int sys_mknod(const char *path) {
 	free(name);
 	free(par_path);
 	free(dup_path);
+	
+	
 		
 	return 0;
 }
 
 int sys_pread(int fildes, void *buf, size_t nbyte, off_t offset){
 	int inode_id,block,off;
-	char *b=malloc(BLOCK_SZ);
-	//printf("%d",);
-	if(fd_table.file_desc[fildes].fd!=-1){
+	printf("offset: %d", offset);
+	char *b = malloc(BLOCK_SZ);
+	if(fd_table.file_desc[fildes].inode_id!=-1){
 		inode_id=fd_table.file_desc[fildes].inode_id;
 		off=fd_table.file_desc[fildes].current_off;
 		block=get_block(inode_id);
-		read_block(block,b);
-		memcpy(&buf, b+off+offset, nbyte);
-		fd_table.file_desc[fildes].current_off+=offset;
+		if(read_block(block, b) == 0) {
+			memcpy(buf, b+off+offset, nbyte);
+			fd_table.file_desc[fildes].current_off += offset;
+			printf("buf: %s, sizeof(buf): %d\n", buf, sizeof(buf));
+			return sizeof(buf);
+		}
 	}	
 	else{
-		return EBADF;//fd doesnt exist
+		return EBADF; // fd does not exist
 	}
 
 }
 
 int sys_pwrite(int fildes, const void *buf, size_t nbyte, off_t offset){
 	int inode_id,block,off;
-	if(fd_table.file_desc[fildes].fd!=-1){
+	if(fd_table.file_desc[fildes].inode_id != -1){
 		inode_id = fd_table.file_desc[fildes].inode_id;
 		off=fd_table.file_desc[fildes].current_off;
 		block=write_block(buf);
-		if(block==-1){
+		if(block == -1) {
 			return EPERM;
 		}
+		set_block(inode_id,block);
+		return nbyte;
 	}
+	
 	else{
+		printf("else\n");
 		return EBADF;
 	}
 

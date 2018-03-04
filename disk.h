@@ -2,7 +2,7 @@
 #define DISK_H
 
 #define MAX_BLOCKS 100
-#define BLOCK_SZ 512
+#define BLOCK_SZ 4096
 
 int init_disk();
 int write_block(const void*);

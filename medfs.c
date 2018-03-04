@@ -25,6 +25,7 @@ static int medfs_mknod(const char *path, mode_t mode, dev_t dev) {
 }
 
 static int medfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi) {
+	
 	printf("readdir called, path: %s\n", path);
 	return sys_readdir(path, buf, filler, offset);
 }
@@ -36,21 +37,34 @@ static int medfs_rmdir(const char *path) {
 
 static int medfs_release(const char *path, struct fuse_file_info *fi) {
 	printf("close called, path: %s\n", path);
-	return 0;
+	return sys_close(fi->fh);
 }
 
 static int medfs_open(const char *path, struct fuse_file_info *fi) {
 	printf("open called, path: %s\n", path);
-	return 0;
+	return sys_open(path);
 }
 
 static int medfs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
-	printf("read called\n");
-	return sys_pread(fi->fh, buf, size, offset);
+	/*char buff[]="hello";
+	strcpy(buf,buff);
+	printf("read called, path and biffer: %s\n ",buf,path);
+	return sizeof(buf);
+	//return sys_pread(fi->fh, buff, size, offset);
+	*/
+	char file54Text[] = "Hello World From File54!";
+	char file349Text[] = "Hello World From File349!";
+	char *selectedText = NULL;
+	
+	selectedText = file54Text;
+	
+	memcpy( buf, selectedText + offset, size );
+		
+	return strlen( selectedText ) - offset;
 }
 
 static int medfs_write(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
-	printf("write called\n");
+	printf("write called, path: %s\n", path);
 	return sys_pwrite(fi->fh, buf, size, offset);
 }
 

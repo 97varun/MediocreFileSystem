@@ -8,7 +8,12 @@ int *bitmap; // if 1 write possible, no otherwise
 int init_disk() {
 	block = malloc(MAX_BLOCKS * sizeof(char*));
 	bitmap = malloc(MAX_BLOCKS * sizeof(int));
-	memset(bitmap, 1, sizeof(bitmap));
+	
+	int j;
+	for (j = 0; j < MAX_BLOCKS; ++j) {
+		bitmap[j] = 1;
+	}
+
 	if (!block) {
 		return -1;
 	}
@@ -24,10 +29,14 @@ int init_disk() {
 
 // read block, given block id
 int read_block(int block_id, void *buf) {
+	printf("read block before\n");
 	if (block_id < MAX_BLOCKS) {
-		memcpy(buf, block[block_id], BLOCK_SZ);
+		memcpy(buf, block[block_id], sizeof(buf));
+		printf("block_id: %d\n", block_id);
+		printf("block[block_id] :%s\n", block[block_id]);
 		return 0;
 	}
+	printf("read block after\n");
 	return -1;
 }
 
@@ -40,7 +49,7 @@ int write_block(const void *buf) {
 		}
 	}
 	if (block_id < MAX_BLOCKS) {
-		memcpy(block[block_id], buf, BLOCK_SZ);
+		memcpy(block[block_id], buf, sizeof(buf));
 		bitmap[block_id] = 0;
 		return block_id;
 	}
@@ -50,7 +59,7 @@ int write_block(const void *buf) {
 // write block at a particular block id
 int write_block_at(int block_id, void *buf) {
 	if (block_id < MAX_BLOCKS) {
-		memcpy(block[block_id], buf, BLOCK_SZ);
+		memcpy(block[block_id], buf, sizeof(buf));
 		bitmap[block_id] = 0;
 		return 0;
 	}

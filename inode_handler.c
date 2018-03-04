@@ -52,7 +52,9 @@ int set_nlink(int inode_num , int value) {
 		return -1;
 	}
 	inode_table.inode[inode_num].nlink=value;
+	printf("filled entry successfully\n");
 	write_block_at(1, &inode_table);
+	printf("filled entry successfully after\n");
 	return 0;
 }
 
