@@ -1,18 +1,22 @@
 #include "common.h"
 #include "syscall.h"
 #include "util.h"
+#include "disk.h"
+#include "inode_handler.h"
 
 static struct directory_t dir;
-static struct fd_table_t fd_table; //file descriptor
+static struct fd_table_t fd_table; // file descriptor table
 
 int sys_init() {
+	// read directory from disk
+	read_block(0, &dir);
+
+	// creating root directory
 	int free_idx = 0;
 	strcpy(dir.dir_block[free_idx].path, "/");
 	fill_dir_ent(&(dir.dir_block[free_idx]), ".", DIR);
 	fill_dir_ent(&(dir.dir_block[free_idx]), "..", DIR);
 	dir.dir_block[free_idx].num_ent = 2;
-	
-	write_block();
 	
 	// initializing fd_table
 	for (int i = 0; i < MAX_FDT_LEN; i++) {
@@ -20,12 +24,16 @@ int sys_init() {
 		fd_table.file_desc[i].inode_id = -1;
 	}
 	
-	inode_init();
+	// wirte directory
+	write_block_at(0, &dir);
 
 	return 0;
 }
 
 int sys_mkdir(const char *path, mode_t mode) {
+	// read directory from disk
+	read_block(0, &dir);
+
 	char *dup_path = strdup(path);
 	char *name = strdup(basename(dup_path));
 	char *par_path = strdup(dirname(dup_path));
@@ -64,6 +72,9 @@ int sys_mkdir(const char *path, mode_t mode) {
 
 	// increase hardlink count
 	dir.dir_block[par_idx].num_ent++;
+	
+	// wirte directory
+	write_block_at(0, &dir);
 
 	free(name);
 	free(par_path);
@@ -73,6 +84,9 @@ int sys_mkdir(const char *path, mode_t mode) {
 }
 
 int sys_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset) {
+	// read directory from disk
+	read_block(0, &dir);
+	
 	int flag = 0;
 	for(int i = 0; i < MAX_DIR_LEN; i++) {
 		if(strcmp(path, dir.dir_block[i].path) == 0) {
@@ -98,6 +112,9 @@ int sys_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offse
 }
 
 int sys_open(const char *path, mode_t mode) {
+	// read directory from disk
+	read_block(0, &dir);
+
 	int flag1=0,flag2=0,flag3=0;
 	int fd,myInode;
 	char * dup_path = strdup(path);
@@ -146,6 +163,9 @@ int sys_close(int fd) {
 }
 
 int sys_lstat(const char *path, struct stat *stbuf) {
+	// read directory from disk
+	read_block(0, &dir);
+	
 	char *dup_path = strdup(path);
 	char *name = strdup(basename(dup_path));
 	char *par_path = strdup(dirname(dup_path));
@@ -205,6 +225,9 @@ int sys_lstat(const char *path, struct stat *stbuf) {
 }
 
 int sys_rmdir(const char *path) {
+	// read directory from disk
+	read_block(0, &dir);
+
 	char *dup_path = strdup(path);
 	char *name = strdup(basename(dup_path));
 	char *par_path = strdup(dirname(dup_path));
@@ -245,6 +268,9 @@ int sys_rmdir(const char *path) {
 	dir.dir_block[i].dir_ent[j].name[0] = '\0';
 	dir.dir_block[i].num_ent--;
 	
+	// wirte directory
+	write_block_at(0, &dir);
+	
 	free(name);
 	free(par_path);
 	free(dup_path);
@@ -253,6 +279,9 @@ int sys_rmdir(const char *path) {
 }
 
 int sys_mknod(const char *path) {
+	// read directory from disk
+	read_block(0, &dir);
+	
 	char *dup_path = strdup(path);
 	char *name = strdup(basename(dup_path));
 	char *par_path = strdup(dirname(dup_path));
@@ -270,6 +299,9 @@ int sys_mknod(const char *path) {
 
 	// increase hardlink count
 	dir.dir_block[par_idx].num_ent++;
+	
+	// wirte directory
+	write_block_at(0, &dir);
 	
 	free(name);
 	free(par_path);
