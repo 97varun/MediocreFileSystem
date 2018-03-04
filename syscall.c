@@ -1,6 +1,7 @@
 #include "common.h"
 #include "syscall.h"
 #include "util.h"
+#include "disk.h"
 
 static struct directory_t dir;
 static struct fd_table_t fd_table; //file descriptor
@@ -296,7 +297,7 @@ int medfs_pread(int fildes, void *buf, size_t nbyte, off_t offset){
 
 }
 
-int medfs_write(int fildes, const void *buf, size_t nbyte, off_t offset){
+int medfs_write(int fildes,  void *buf, size_t nbyte, off_t offset){
 	int inode_id,block,off;
 	if(fd_table.file_desc[fildes].fd!=-1){
 		inode_id = fd_table.file_desc[fildes].inode_id;
