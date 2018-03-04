@@ -218,6 +218,7 @@ int sys_lstat(const char *path, struct stat *stbuf) {
 	// determine type, file or directory
 	if (dir.dir_block[par_idx].dir_ent[j].type == REG_FILE) {
 		stbuf->st_mode = S_IFREG | 0777;
+		stbuf->st_size = BLOCK_SZ;
 	} else {
 		int dir_idx;
 		for (dir_idx = 0; dir_idx < MAX_DIR_LEN; ++dir_idx) {
@@ -345,7 +346,7 @@ int sys_pwrite(int fildes, const void *buf, size_t nbyte, off_t offset){
 	int inode_id,block,off;
 	if(fd_table.file_desc[fildes].inode_id != -1){
 		inode_id = fd_table.file_desc[fildes].inode_id;
-		off=fd_table.file_desc[fildes].current_off;
+		off = fd_table.file_desc[fildes].current_off;
 		block=write_block(buf);
 		if(block == -1) {
 			return EPERM;
