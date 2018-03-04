@@ -26,6 +26,8 @@ int sys_init() {
 	
 	// wirte directory
 	write_block_at(0, &dir);
+	
+	inode_init();
 
 	return 0;
 }

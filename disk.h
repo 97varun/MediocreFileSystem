@@ -6,7 +6,7 @@
 
 int init_disk();
 int write_block(void*);
-int write_block_at(int, void*);
+int write_block_at(int, const void*);
 int read_block(int, void*);
 void free_disk();
 int erase_block(int);

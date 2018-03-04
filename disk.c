@@ -32,7 +32,7 @@ int read_block(int block_id, void *buf) {
 }
 
 // write a block
-int write_block(void *buf) {
+int write_block(const void *buf) {
 	int block_id;
 	for (block_id = 2; block_id < MAX_BLOCKS; ++block_id) {
 		if (bitmap[block_id]) {

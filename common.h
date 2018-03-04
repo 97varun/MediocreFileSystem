@@ -57,6 +57,7 @@ struct inode_table_t {
 struct file_desc_t {
 	int fd;
 	int inode_id;
+	int current_off;
 };
 
 struct fd_table_t {
