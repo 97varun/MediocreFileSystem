@@ -8,8 +8,10 @@ static struct directory_t dir;
 static struct fd_table_t fd_table; // file descriptor table
 
 int sys_init() {
+	init_disk();
+
 	// read directory from disk
-	read_block(0, &dir);
+	// read_block(0, &dir);
 
 	// creating root directory
 	int free_idx = 0;
@@ -28,6 +30,8 @@ int sys_init() {
 	write_block_at(0, &dir);
 	
 	inode_init();
+	
+	// free_disk();
 
 	return 0;
 }
@@ -312,7 +316,7 @@ int sys_mknod(const char *path) {
 	return 0;
 }
 
-int medfs_pread(int fildes, void *buf, size_t nbyte, off_t offset){
+int sys_pread(int fildes, void *buf, size_t nbyte, off_t offset){
 	int inode_id,block,off;
 	char *b=malloc(BLOCK_SZ);
 	//printf("%d",);
@@ -330,7 +334,7 @@ int medfs_pread(int fildes, void *buf, size_t nbyte, off_t offset){
 
 }
 
-int medfs_write(int fildes, const void *buf, size_t nbyte, off_t offset){
+int sys_pwrite(int fildes, const void *buf, size_t nbyte, off_t offset){
 	int inode_id,block,off;
 	if(fd_table.file_desc[fildes].fd!=-1){
 		inode_id = fd_table.file_desc[fildes].inode_id;

@@ -46,12 +46,12 @@ static int medfs_open(const char *path, struct fuse_file_info *fi) {
 
 static int medfs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
 	printf("read called\n");
-	return 0;
+	return sys_pread(fi->fh, buf, size, offset);
 }
 
 static int medfs_write(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
 	printf("write called\n");
-	return 0;
+	return sys_pwrite(fi->fh, buf, size, offset);
 }
 
 static struct fuse_operations medfs_oper = {
