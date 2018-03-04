@@ -34,11 +34,21 @@ int read_block(int block_id, void *buf) {
 // write a block
 int write_block(void *buf) {
 	int block_id;
-	for (block_id = 0; block_id < MAX_BLOCKS; ++block_id) {
+	for (block_id = 2; block_id < MAX_BLOCKS; ++block_id) {
 		if (bitmap[block_id]) {
 			break;
 		}
 	}
+	if (block_id < MAX_BLOCKS) {
+		memcpy(block[block_id], buf, BLOCK_SZ);
+		bitmap[block_id] = 0;
+		return block_id;
+	}
+	return -1;
+}
+
+// write block at a particular block id
+int write_block_at(int block_id, void *buf) {
 	if (block_id < MAX_BLOCKS) {
 		memcpy(block[block_id], buf, BLOCK_SZ);
 		bitmap[block_id] = 0;
