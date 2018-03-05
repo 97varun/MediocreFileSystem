@@ -7,40 +7,45 @@
 static struct directory_t dir;
 static struct fd_table_t fd_table; // file descriptor table
 
+void init_init() {
+	int free_idx = 0;
+	strcpy(dir.dir_block[free_idx].path, "/");
+	fill_dir_ent(&(dir.dir_block[free_idx]), ".", DIR);
+	fill_dir_ent(&(dir.dir_block[free_idx]), "..", DIR);
+	dir.dir_block[free_idx].num_ent = 2;
+
+	d_init_init();
+
+	void *tmp_dir = malloc(BLOCK_SZ);
+	memcpy(tmp_dir, &dir, sizeof(dir));
+	write_block_at(0, tmp_dir);
+	free(tmp_dir);
+
+	inode_init();
+}
+
 int sys_init() {
 	init_disk();
 
 	// read directory from disk
-	read_block(0, &dir);
+	void *tmp_dir = malloc(BLOCK_SZ);
+	read_block(0, tmp_dir);
+	memcpy(&dir, tmp_dir, sizeof(dir));
+	free(tmp_dir);
 	
 	printf("directory :--\n");
 	int q;
 	for (q = 0; q < 5; ++q) {
 		printf("%s\n", dir.dir_block[q].path);
 	}
-
-	// creating root directory
-	/*
-	int free_idx = 0;
-	strcpy(dir.dir_block[free_idx].path, "/");
-	fill_dir_ent(&(dir.dir_block[free_idx]), ".", DIR);
-	fill_dir_ent(&(dir.dir_block[free_idx]), "..", DIR);
-	dir.dir_block[free_idx].num_ent = 2;
-	*/
+	
 	// initializing fd_table
 	for (int i = 0; i < MAX_FDT_LEN; i++) {
 		fd_table.file_desc[i].fd = -1;
 		fd_table.file_desc[i].inode_id = -1;
 	}
 	
-	// wirte directory
-	/*
-	void *tmp_dir = malloc(BLOCK_SZ);
-	memcpy(tmp_dir, &dir, sizeof(dir));
-	write_block_at(0, tmp_dir);
-	free(tmp_dir);
-	*/
-	inode_init();
+	// init_init();
 
 	return 0;
 }
@@ -95,18 +100,6 @@ int sys_mkdir(const char *path, mode_t mode) {
 	memcpy(tmp_dir, &dir, sizeof(dir));
 	write_block_at(0, tmp_dir);
 	free(tmp_dir);
-	
-	printf("directory :--\n");
-	int q;
-	for (q = 0; q < 5; ++q) {
-		printf("%s\n", dir.dir_block[q].path);
-	}
-	
-	read_block(0, &dir);
-	printf("after read directory :--\n");
-	for (q = 0; q < 5; ++q) {
-		printf("%s\n", dir.dir_block[q].path);
-	}
 	
 	free(name);
 	free(par_path);
@@ -177,7 +170,6 @@ int sys_open(const char *path) {
 	}
 
 	if(flag1  && flag3) {
-		//printf("fd : %d\n", &fd);
 		return fd;
 	}
 	return -1;
@@ -189,10 +181,10 @@ int sys_close(int fd) {
 		return -1;
 	}
 	else {
-		fd_table.file_desc[fd].fd=-1;
-		fd_table.file_desc[fd].inode_id=-1;
-	}	
-	printf("closed successfully\n");
+		fd_table.file_desc[fd].inode_id = -1;
+		fd_table.file_desc[fd].current_off = 0;
+		fd_table.file_desc[fd].fd = -1;
+	}
 	return 0;
 }
 
@@ -203,10 +195,6 @@ int sys_lstat(const char *path, struct stat *stbuf) {
 	char *dup_path = strdup(path);
 	char *name = strdup(basename(dup_path));
 	char *par_path = strdup(dirname(dup_path));
-	
-	printf("dup path: %s\n", dup_path);
-	printf("name: %s\n", name);
-	printf("par path: %s\n", par_path);
 	
 	if (!strcmp(path, "/")) {
 		int dir_idx = 0;
@@ -225,12 +213,10 @@ int sys_lstat(const char *path, struct stat *stbuf) {
 	
 	// path does not exist
 	if (par_idx >= MAX_DIR_LEN) {
-		printf("fount error1\n");
 		return -ENOENT;
 	}
 	
 	if (name == NULL || par_path == NULL) {
-		printf("fount error2\n");
 		return -ENOENT;
 	}
 	
@@ -244,7 +230,6 @@ int sys_lstat(const char *path, struct stat *stbuf) {
 
 	// file or directory does not exist
 	if (j >= MAX_DIRENT_NB) {
-		printf("fount error3\n");
 		return -ENOENT;
 	}
 
@@ -252,6 +237,8 @@ int sys_lstat(const char *path, struct stat *stbuf) {
 	if (dir.dir_block[par_idx].dir_ent[j].type == REG_FILE) {
 		stbuf->st_mode = S_IFREG | 0777;
 		stbuf->st_size = BLOCK_SZ;
+		stbuf->st_blksize = BLOCK_SZ;
+		stbuf->st_blocks  = 2;
 	} else {
 		int dir_idx;
 		for (dir_idx = 0; dir_idx < MAX_DIR_LEN; ++dir_idx) {
@@ -359,18 +346,22 @@ int sys_mknod(const char *path) {
 }
 
 int sys_pread(int fildes, void *buf, size_t nbyte, off_t offset){
-	int inode_id,block,off;
-	printf("offset: %d", offset);
+	int inode_id, block, off;
 	char *b = malloc(BLOCK_SZ);
-	if(fd_table.file_desc[fildes].inode_id!=-1){
-		inode_id=fd_table.file_desc[fildes].inode_id;
-		off=fd_table.file_desc[fildes].current_off;
-		block=get_block(inode_id);
+	if(fd_table.file_desc[fildes].inode_id != -1) {
+		inode_id = fd_table.file_desc[fildes].inode_id;
+		off = fd_table.file_desc[fildes].current_off;
+		block = get_block(inode_id);
 		if(read_block(block, b) == 0) {
-			memcpy(buf, b+off+offset, nbyte);
-			// fd_table.file_desc[fildes].current_off 0;
-			printf("buf: %s, sizeof(buf): %d\n", buf, sizeof(buf));
-			return sizeof(buf);
+			int i = 0;
+			while ((b + off)[i] != EOF && i < nbyte) {
+				++i;
+			}
+			printf("nbyte: %d\n", i);
+			int nb = (i < nbyte) ? i : nbyte;
+			memcpy(buf, b + off, nb);
+			fd_table.file_desc[fildes].current_off += nb;
+			return nb;
 		}
 	}	
 	else{
@@ -380,23 +371,30 @@ int sys_pread(int fildes, void *buf, size_t nbyte, off_t offset){
 }
 
 int sys_pwrite(int fildes, const void *buf, size_t nbyte, off_t offset){
-	int inode_id,block,off;
+	int inode_id,block, off;
 	if(fd_table.file_desc[fildes].inode_id != -1){
 		inode_id = fd_table.file_desc[fildes].inode_id;
 		off = fd_table.file_desc[fildes].current_off;
-		block=write_block(buf);
+		
+		printf("inode_id: %d, off: %d\n", inode_id, off);
+		
+		char *tmp_data = malloc(BLOCK_SZ);
+		memcpy(tmp_data, buf, nbyte);
+		tmp_data[nbyte] = EOF;
+		block = write_block(tmp_data);
+		free(tmp_data);
+		
 		if(block == -1) {
 			return EPERM;
 		}
-		set_block(inode_id,block);
+		
+		set_block(inode_id, block);
 		return nbyte;
 	}
 	
 	else{
-		printf("else\n");
 		return EBADF;
 	}
-
 }
 
 int sys_unlink(const char *path) {

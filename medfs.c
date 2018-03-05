@@ -15,12 +15,12 @@ static int medfs_getattr(const char *path, struct stat *stbuf) {
 }
 
 static int medfs_mkdir(const char *path, mode_t mode) {
-	printf("mkdir called\n");
+	printf("mkdir called, path: %s\n", path);
 	return sys_mkdir(path, mode);
 }
 
 static int medfs_mknod(const char *path, mode_t mode, dev_t dev) {
-	printf("mknod called\n");
+	printf("mknod called, path: %s\n", path);
 	return sys_mknod(path);
 }
 
@@ -45,7 +45,7 @@ static int medfs_open(const char *path, struct fuse_file_info *fi) {
 }
 
 static int medfs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
-	printf("read called, path and biffer: %s\n ",buf,path);
+	printf("read called, path: %s\n", path);
 	return sys_pread(fi->fh, buf, size, offset);
 }
 

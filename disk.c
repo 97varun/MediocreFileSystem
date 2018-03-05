@@ -4,18 +4,33 @@
 static char **block;
 int *bitmap; // if 1 write possible, no otherwise
 
-// initialise disk
-int init_disk() {
+int d_init_init() {
 	block = malloc(MAX_BLOCKS * sizeof(char*));
 	bitmap = malloc(MAX_BLOCKS * sizeof(int));
 	
-	
+	if (!block) {
+		return -1;
+	}
+	int i;
+	for (i = 0; i < MAX_BLOCKS; ++i) {
+		block[i] = malloc(BLOCK_SZ * sizeof(char));
+		if (!block[i]) {
+			return -1;
+		}
+	}
+
 	int j;
 	for (j = 0; j < MAX_BLOCKS; ++j) {
 		bitmap[j] = 1;
 	}
 	
-	
+	return 0;
+}
+
+// initialise disk
+int init_disk() {
+	block = malloc(MAX_BLOCKS * sizeof(char*));
+	bitmap = malloc(MAX_BLOCKS * sizeof(int));
 	
 	if (!block) {
 		return -1;
@@ -52,6 +67,7 @@ int init_disk() {
 // read block, given block id
 int read_block(int block_id, void *buf) {
 	if (block_id < MAX_BLOCKS) {
+		printf("in read block block_id: %d", block_id);
 		memcpy(buf, block[block_id], BLOCK_SZ);
 		printf("block_id: %d\n", block_id);
 		printf("block[block_id] :%s\n", block[block_id]);

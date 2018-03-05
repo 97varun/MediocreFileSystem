@@ -18,6 +18,7 @@ int fill_dir_ent(struct dir_block_t *dir_block, char *entry, enum type_t type) {
 	
 	if (type == REG_FILE) {
 		dir_block->dir_ent[i].inode_id = get_inode();
+		printf("inode id: %d\n", dir_block->dir_ent[i].inode_id);
 		set_nlink(dir_block->dir_ent[i].inode_id, 1);	
 	}
 	

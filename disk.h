@@ -4,6 +4,7 @@
 #define MAX_BLOCKS 100
 #define BLOCK_SZ 4096
 
+int d_init_init();
 int init_disk();
 int init_disk_first_time();
 int write_block(const void*);

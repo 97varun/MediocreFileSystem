@@ -1,17 +1,28 @@
 #include "inode_handler.h"
 #include "disk.h"
 
-int inode_init(){
+int inode_init() {
 	for (int i = 0; i < MAX_INODE_NB; i++) {
 		for (int j = 0; j < MAX_BLOCKS_PER_FILE; j++) {
-			inode_table.inode[i].block_id_list[j]=-1;
+			inode_table.inode[i].block_id_list[j] = -1;
 		}
 	}
+	
+	void *tmp_it = malloc(BLOCK_SZ);
+	memcpy(tmp_it, &inode_table, sizeof(inode_table));
+	write_block_at(1, tmp_it);
+	free(tmp_it);
+	
 	return 0;
 }
 
 
 int get_inode() {
+	void *tmp_it = malloc(BLOCK_SZ);
+	read_block(1, tmp_it);
+	memcpy(&inode_table, tmp_it, sizeof(inode_table));
+	free(tmp_it);
+
 	int free_inode,flag = 0;
 	for(int i = 0; i < MAX_INODE_NB; i++) {
 		if(inode_table.inode[i].block_id_list[0]==-1) {
@@ -37,10 +48,20 @@ int free_inode(int inode_num) {
 }
 
 int get_block(int inode_num) {
+	void *tmp_it = malloc(BLOCK_SZ);
+	read_block(1, tmp_it);
+	memcpy(&inode_table, tmp_it, sizeof(inode_table));
+	free(tmp_it);	
+	
 	return inode_table.inode[inode_num].block_id_list[0];
 }
 
 int get_nlink(int inode_num) {
+	void *tmp_it = malloc(BLOCK_SZ);
+	read_block(1, tmp_it);
+	memcpy(&inode_table, tmp_it, sizeof(inode_table));
+	free(tmp_it);
+
 	if(inode_num > MAX_INODE_NB - 1 || inode_num < 0) {
 		return 1;
 	}
