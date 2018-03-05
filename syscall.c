@@ -202,6 +202,8 @@ int sys_lstat(const char *path, struct stat *stbuf) {
 		int dir_idx = 0;
 		stbuf->st_mode = S_IFDIR | 0777;
 		stbuf->st_nlink = dir.dir_block[dir_idx].num_ent;
+		stbuf->st_uid = getuid();
+		stbuf->st_gid = getgid();
 		return 0;
 	}
 	
@@ -241,6 +243,8 @@ int sys_lstat(const char *path, struct stat *stbuf) {
 		stbuf->st_size = BLOCK_SZ;
 		stbuf->st_blksize = BLOCK_SZ;
 		stbuf->st_blocks  = 2;
+		stbuf->st_uid = getuid();
+		stbuf->st_gid = getgid();
 	} else {
 		int dir_idx;
 		for (dir_idx = 0; dir_idx < MAX_DIR_LEN; ++dir_idx) {
@@ -250,6 +254,8 @@ int sys_lstat(const char *path, struct stat *stbuf) {
 		}
 		stbuf->st_mode = S_IFDIR | 0755;
 		stbuf->st_nlink = dir.dir_block[dir_idx].num_ent;
+		stbuf->st_uid = getuid();
+		stbuf->st_gid = getgid();
 	}
 
 	return 0;
