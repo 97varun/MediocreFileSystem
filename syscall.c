@@ -28,10 +28,12 @@ int sys_init() {
 	init_disk();
 
 	// read directory from disk
+	
 	void *tmp_dir = malloc(BLOCK_SZ);
 	read_block(0, tmp_dir);
 	memcpy(&dir, tmp_dir, sizeof(dir));
 	free(tmp_dir);
+	
 	
 	printf("directory :--\n");
 	int q;
@@ -274,6 +276,11 @@ int sys_rmdir(const char *path) {
 		return -ENOENT;
 	}
 	
+	if (dir.dir_block[i].num_ent > 0) {
+		printf("Directory is not empty \n");
+		return -ENOTEMPTY;
+	}
+	
 	// make path empty
 	dir.dir_block[i].path[0] = '\0';
 	dir.dir_block[i].num_ent = 0;
@@ -426,6 +433,7 @@ int sys_unlink(const char *path) {
 	// make entry empty
 	dir.dir_block[i].dir_ent[j].name[0] = '\0';
 	dir.dir_block[i].num_ent--;
+	free_inode(dir.dir_block[i].dir_ent[j].inode_id);
 	
 	// wirte directory
 	void *tmp_dir = malloc(BLOCK_SZ);
