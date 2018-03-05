@@ -53,6 +53,7 @@ int init_disk() {
 	fread(bitmap, sizeof(int), MAX_BLOCKS, fp);
 	fclose(fp);
 	
+	/*
 	printf("bitmap\n");
 	for (i = 0; i < 10; ++i) {
 		printf("%d", bitmap[i]);
@@ -60,6 +61,7 @@ int init_disk() {
 	printf("\n");
 	
 	printf("first block: %s\n", block[0]);
+	*/
 	
 	return 0;
 }
@@ -67,10 +69,9 @@ int init_disk() {
 // read block, given block id
 int read_block(int block_id, void *buf) {
 	if (block_id < MAX_BLOCKS) {
-		printf("in read block block_id: %d", block_id);
 		memcpy(buf, block[block_id], BLOCK_SZ);
-		printf("block_id: %d\n", block_id);
-		printf("block[block_id] :%s\n", block[block_id]);
+//		printf("block_id: %d\n", block_id);
+//		printf("block[block_id] :%s\n", block[block_id]);
 		return 0;
 	}
 	return -1;

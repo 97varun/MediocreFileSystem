@@ -68,6 +68,15 @@ int get_nlink(int inode_num) {
 	return inode_table.inode[inode_num].nlink;
 }
 
+size_t get_size(int inode_num) {
+	void *tmp_it = malloc(BLOCK_SZ);
+	read_block(1, tmp_it);
+	memcpy(&inode_table, tmp_it, sizeof(inode_table));
+	free(tmp_it);	
+	
+	return inode_table.inode[inode_num].sz;
+}
+
 int set_nlink(int inode_num , int value) {
 	if(inode_num > MAX_INODE_NB - 1 || inode_num < 0) {
 		return -1;
@@ -87,6 +96,20 @@ int set_block(int inode_num , int block_id) {
 		return -1;
 	}
 	inode_table.inode[inode_num].block_id_list[0]=block_id;
+	
+	void *tmp_it = malloc(BLOCK_SZ);
+	memcpy(tmp_it, &inode_table, sizeof(inode_table));
+	write_block_at(1, tmp_it);
+	free(tmp_it);
+	
+	return 0;
+}
+
+int set_size(int inode_num, size_t sz) {
+	if(inode_num > MAX_INODE_NB - 1 || inode_num < 0) {
+		return -1;
+	}
+	inode_table.inode[inode_num].sz = sz;
 	
 	void *tmp_it = malloc(BLOCK_SZ);
 	memcpy(tmp_it, &inode_table, sizeof(inode_table));

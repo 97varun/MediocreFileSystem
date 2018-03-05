@@ -138,7 +138,7 @@ int sys_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offse
 	return 0;
 }
 
-int sys_open(const char *path) {
+int sys_open(const char *path, int flags) {
 	// read directory from disk
 	// read_block(0, &dir);
 
@@ -172,6 +172,11 @@ int sys_open(const char *path) {
 	}
 
 	if(flag1  && flag3) {
+		if (flags & O_APPEND) {
+			printf("append mode\n");
+			fd_table.file_desc[fd].current_off = get_size(myInode);
+		}
+	
 		return fd;
 	}
 	return -1;
@@ -240,7 +245,8 @@ int sys_lstat(const char *path, struct stat *stbuf) {
 	// determine type, file or directory
 	if (dir.dir_block[par_idx].dir_ent[j].type == REG_FILE) {
 		stbuf->st_mode = S_IFREG | 0777;
-		stbuf->st_size = BLOCK_SZ;
+		stbuf->st_nlink = get_nlink(dir.dir_block[par_idx].dir_ent[j].inode_id);
+		stbuf->st_size = get_size(dir.dir_block[par_idx].dir_ent[j].inode_id);
 		stbuf->st_blksize = BLOCK_SZ;
 		stbuf->st_blocks  = 2;
 		stbuf->st_uid = getuid();
@@ -383,25 +389,44 @@ int sys_pread(int fildes, void *buf, size_t nbyte, off_t offset){
 
 }
 
-int sys_pwrite(int fildes, const void *buf, size_t nbyte, off_t offset){
+int sys_pwrite(int fildes, const void *buf, size_t nbyte, off_t offset) {
 	int inode_id,block, off;
 	if(fd_table.file_desc[fildes].inode_id != -1){
 		inode_id = fd_table.file_desc[fildes].inode_id;
 		off = fd_table.file_desc[fildes].current_off;
 		
-		printf("inode_id: %d, off: %d\n", inode_id, off);
-		
 		char *tmp_data = malloc(BLOCK_SZ);
-		memcpy(tmp_data, buf, nbyte);
-		tmp_data[nbyte] = EOF;
-		block = write_block(tmp_data);
+		
+		// first read already written stuff then write at appropriate position
+		if ((block = get_block(inode_id)) != -1) {
+			printf("file already exists, offset: %ld, off: %d\n", offset, off);
+			read_block(block, tmp_data);
+			if (offset + nbyte > get_size(inode_id)) {
+				tmp_data[offset + nbyte] = EOF;
+			}
+			memcpy(tmp_data + offset, buf, nbyte);
+			write_block_at(block, tmp_data);
+		} 
+		// if file does not exist already
+		else {
+			printf("file does not exist, offset: %ld, off: %d\n", offset, off);
+			memcpy(tmp_data, buf, nbyte);
+			tmp_data[nbyte] = EOF;
+			block = write_block(tmp_data);
+			if(block == -1) {
+				return EPERM;
+			}
+			set_block(inode_id, block);
+		}
 		free(tmp_data);
 		
-		if(block == -1) {
-			return EPERM;
+		// updating file size.
+		printf("current size: %lu\n", get_size(inode_id));
+		if (nbyte + offset > get_size(inode_id)) {
+			set_size(inode_id, nbyte + offset);
+			printf("updated size: %lu\n", get_size(inode_id));			
 		}
 		
-		set_block(inode_id, block);
 		return nbyte;
 	}
 	

@@ -41,7 +41,7 @@ static int medfs_release(const char *path, struct fuse_file_info *fi) {
 
 static int medfs_open(const char *path, struct fuse_file_info *fi) {
 	printf("open called, path: %s\n", path);
-	return sys_open(path);
+	return sys_open(path, fi->flags);
 }
 
 static int medfs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {

@@ -32,6 +32,7 @@ struct inode_t {
 	int block_id_list[MAX_BLOCKS_PER_FILE];
 	mode_t mode;
 	nlink_t nlink;
+	size_t sz;
 };
 
 struct dir_ent_t {
