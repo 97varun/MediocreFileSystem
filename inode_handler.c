@@ -42,7 +42,7 @@ int get_block(int inode_num) {
 
 int get_nlink(int inode_num) {
 	if(inode_num > MAX_INODE_NB - 1 || inode_num < 0) {
-		return -1;
+		return 1;
 	}
 	return inode_table.inode[inode_num].nlink;
 }
@@ -52,9 +52,12 @@ int set_nlink(int inode_num , int value) {
 		return -1;
 	}
 	inode_table.inode[inode_num].nlink=value;
-	printf("filled entry successfully\n");
-	write_block_at(1, &inode_table);
-	printf("filled entry successfully after\n");
+	
+	void *tmp_it = malloc(BLOCK_SZ);
+	memcpy(tmp_it, &inode_table, sizeof(inode_table));
+	write_block_at(1, tmp_it);
+	free(tmp_it);
+	
 	return 0;
 }
 
@@ -63,6 +66,11 @@ int set_block(int inode_num , int block_id) {
 		return -1;
 	}
 	inode_table.inode[inode_num].block_id_list[0]=block_id;
-	write_block_at(1, &inode_table);
+	
+	void *tmp_it = malloc(BLOCK_SZ);
+	memcpy(tmp_it, &inode_table, sizeof(inode_table));
+	write_block_at(1, tmp_it);
+	free(tmp_it);
+	
 	return 0;
 }

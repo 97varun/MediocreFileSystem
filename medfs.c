@@ -54,6 +54,11 @@ static int medfs_write(const char *path, const char *buf, size_t size, off_t off
 	return sys_pwrite(fi->fh, buf, size, offset);
 }
 
+static int medfs_unlink(const char *path) {
+	printf("unlink called, path: %s\n", path);
+	return sys_unlink(path);
+}
+
 static struct fuse_operations medfs_oper = {
 	.init		= medfs_init,
 	.getattr	= medfs_getattr,
@@ -65,6 +70,7 @@ static struct fuse_operations medfs_oper = {
 	.write		= medfs_write,
 	.release	= medfs_release,
 	.rmdir		= medfs_rmdir,
+	.unlink		= medfs_unlink,
 };
 
 int main(int argc, char *argv[]) {

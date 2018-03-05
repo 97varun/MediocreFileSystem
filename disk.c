@@ -9,12 +9,13 @@ int init_disk() {
 	block = malloc(MAX_BLOCKS * sizeof(char*));
 	bitmap = malloc(MAX_BLOCKS * sizeof(int));
 	
-	/*
+	
 	int j;
 	for (j = 0; j < MAX_BLOCKS; ++j) {
 		bitmap[j] = 1;
 	}
-	*/
+	
+	
 	
 	if (!block) {
 		return -1;
@@ -32,16 +33,10 @@ int init_disk() {
 		fread(block[i], 1, BLOCK_SZ, fp);	
 	}
 	fclose(fp);
-	if (remove("/tmp/medfs_disk")) {
-		printf("deletion successful\n");
-	}
 	
 	fp = fopen("/tmp/medfs_bitmap", "r+");
 	fread(bitmap, sizeof(int), MAX_BLOCKS, fp);
 	fclose(fp);
-	if (remove("/tmp/medfs_bitmap")) {
-		printf("deletion successful\n");
-	}
 	
 	printf("bitmap\n");
 	for (i = 0; i < 10; ++i) {
@@ -96,7 +91,6 @@ int write_block(const void *buf) {
 // write block at a particular block id
 int write_block_at(int block_id, const void *buf) {
 	if (block_id < MAX_BLOCKS) {
-		printf("sizeof(buf): %d\n", sizeof(buf));
 		memcpy(block[block_id], buf, BLOCK_SZ);
 		bitmap[block_id] = 0;
 		
@@ -104,7 +98,6 @@ int write_block_at(int block_id, const void *buf) {
 		int i;
 		for (i = 0; i < MAX_BLOCKS; ++i) {
 			int n = fwrite(block[i], 1, BLOCK_SZ, fp);
-			printf("number of blocks written: %d\n", n);
 		}
 		fclose(fp);
 		fp = fopen("/tmp/medfs_bitmap", "w+");

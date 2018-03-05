@@ -34,11 +34,13 @@ int sys_init() {
 	}
 	
 	// wirte directory
-	// write_block_at(0, &dir);
-	
+	/*
+	void *tmp_dir = malloc(BLOCK_SZ);
+	memcpy(tmp_dir, &dir, sizeof(dir));
+	write_block_at(0, tmp_dir);
+	free(tmp_dir);
+	*/
 	inode_init();
-	
-	// free_disk();
 
 	return 0;
 }
@@ -79,6 +81,8 @@ int sys_mkdir(const char *path, mode_t mode) {
 			break;
 		}	
 	}
+	
+	printf("par_idx: %d\n", par_idx);
 
 	// add entry to parent directory
 	fill_dir_ent(&(dir.dir_block[par_idx]), name, DIR);
@@ -87,11 +91,10 @@ int sys_mkdir(const char *path, mode_t mode) {
 	dir.dir_block[par_idx].num_ent++;
 	
 	// wirte directory
-	printf("sizeof(dir): %d\n", sizeof(dir));
-	char* tmp_dir = malloc(sizeof(dir));
-	printf("sizeof(tmp_dir): %d\n", sizeof(tmp_dir));
+	void *tmp_dir = malloc(BLOCK_SZ);
 	memcpy(tmp_dir, &dir, sizeof(dir));
 	write_block_at(0, tmp_dir);
+	free(tmp_dir);
 	
 	printf("directory :--\n");
 	int q;
@@ -201,6 +204,10 @@ int sys_lstat(const char *path, struct stat *stbuf) {
 	char *name = strdup(basename(dup_path));
 	char *par_path = strdup(dirname(dup_path));
 	
+	printf("dup path: %s\n", dup_path);
+	printf("name: %s\n", name);
+	printf("par path: %s\n", par_path);
+	
 	if (!strcmp(path, "/")) {
 		int dir_idx = 0;
 		stbuf->st_mode = S_IFDIR | 0777;
@@ -218,10 +225,12 @@ int sys_lstat(const char *path, struct stat *stbuf) {
 	
 	// path does not exist
 	if (par_idx >= MAX_DIR_LEN) {
+		printf("fount error1\n");
 		return -ENOENT;
 	}
 	
 	if (name == NULL || par_path == NULL) {
+		printf("fount error2\n");
 		return -ENOENT;
 	}
 	
@@ -235,6 +244,7 @@ int sys_lstat(const char *path, struct stat *stbuf) {
 
 	// file or directory does not exist
 	if (j >= MAX_DIRENT_NB) {
+		printf("fount error3\n");
 		return -ENOENT;
 	}
 
@@ -301,7 +311,10 @@ int sys_rmdir(const char *path) {
 	dir.dir_block[i].num_ent--;
 	
 	// wirte directory
-	write_block_at(0, &dir);
+	void *tmp_dir = malloc(BLOCK_SZ);
+	memcpy(tmp_dir, &dir, sizeof(dir));
+	write_block_at(0, tmp_dir);
+	free(tmp_dir);
 	
 	free(name);
 	free(par_path);
@@ -333,7 +346,10 @@ int sys_mknod(const char *path) {
 	dir.dir_block[par_idx].num_ent++;
 	
 	// wirte directory
-	write_block_at(0, &dir);
+	void *tmp_dir = malloc(BLOCK_SZ);
+	memcpy(tmp_dir, &dir, sizeof(dir));
+	write_block_at(0, tmp_dir);
+	free(tmp_dir);
 	
 	free(name);
 	free(par_path);
@@ -381,4 +397,47 @@ int sys_pwrite(int fildes, const void *buf, size_t nbyte, off_t offset){
 		return EBADF;
 	}
 
+}
+
+int sys_unlink(const char *path) {
+	char *dup_path = strdup(path);
+	char *name = strdup(basename(dup_path));
+	char *par_path = strdup(dirname(dup_path));
+	
+	// find parent in directory
+	int i;
+	for (i = 0; i < MAX_DIR_LEN; ++i) {
+		if (!strcmp(par_path, dir.dir_block[i].path)) {
+			break;
+		}	
+	}
+	
+	// find entry in parent
+	int j;
+	for (j = 0; j < MAX_DIRENT_NB; ++j) {
+		if (!strcmp(name, dir.dir_block[i].dir_ent[j].name)) {
+			break;
+		}
+	}
+	
+	// file does not exist
+	if (j > MAX_DIRENT_NB) {
+		return -ENOENT;
+	}
+	
+	// make entry empty
+	dir.dir_block[i].dir_ent[j].name[0] = '\0';
+	dir.dir_block[i].num_ent--;
+	
+	// wirte directory
+	void *tmp_dir = malloc(BLOCK_SZ);
+	memcpy(tmp_dir, &dir, sizeof(dir));
+	write_block_at(0, tmp_dir);
+	free(tmp_dir);
+	
+	free(name);
+	free(par_path);
+	free(dup_path);
+	
+	return 0;
 }

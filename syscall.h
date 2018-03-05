@@ -13,5 +13,6 @@ int sys_close(int fd);
 int sys_init();
 int sys_rmdir(const char *path);
 int sys_mknod(const char *path);
+int sys_unlink(const char *path);
 
 #endif
